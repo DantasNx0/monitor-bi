@@ -31,7 +31,7 @@ def send_telegram_message(message):
     try:
         response = requests.post(url, json=payload)
         response.raise_for_status()
-        print(f"Mensagem enviada para o Telegram: {message}")
+        print(f"Mensagem enviada para o Telegram: \n {message}")
     except Exception as e:
         print(f"Erro ao enviar mensagem no Telegram: {e}")
 

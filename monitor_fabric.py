@@ -2,7 +2,7 @@ import requests
 import os
 import json
 import time
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from dotenv import load_dotenv
 
 # Carregar variáveis de ambiente
@@ -142,8 +142,13 @@ def check_workspaces():
                             # Formatar data para PT-BR se possível
                             try:
                                 dt = datetime.fromisoformat(end_time_str.replace("Z", "+00:00"))
-                                formatted_time = dt.strftime("%d/%m/%Y %H:%M:%S")
-                            except:
+                                # Converter para Horário de Brasília (UTC-3)
+                                brt_tz = timezone(timedelta(hours=-3))
+                                dt_br = dt.astimezone(brt_tz)
+                                formatted_time = dt_br.strftime("%d/%m/%Y %H:%M:%S")
+                            except Exception as e:
+                                # Fallback para string original em caso de erro na conversão
+                                print(f"⚠️ Erro ao converter data: {e}")
                                 formatted_time = end_time_str
 
                             # Verificar se já notificamos este erro específico
@@ -188,7 +193,7 @@ def check_workspaces():
 
 if __name__ == "__main__":
     print("🚀 Monitor de Power BI via API iniciado!")
-    send_telegram_message("🚀 Monitor de Power BI iniciado! Vou vigiar seus Workspaces.")
+    send_telegram_message("🚀 Monitor de Power BI iniciado! Vigiando os Workspaces.")
     
     while True:
         check_workspaces()

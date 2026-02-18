@@ -15,7 +15,7 @@ echo  [INFO] Pressione CTRL+C para encerrar o monitoramento a qualquer momento.
 echo.
 echo  --------------------------------------------------------------------------------------------------
 echo.
-python monitor_email.py
+python monitor_fabric.py
 echo.
 echo  --------------------------------------------------------------------------------------------------
 echo  [INFO] O monitor foi encerrado.

@@ -193,7 +193,7 @@ def check_workspaces():
 
 if __name__ == "__main__":
     print("🚀 Monitor de Power BI via API iniciado!")
-    send_telegram_message("🚀 Monitor de Power BI iniciado! Vigiando os Workspaces.")
+    # send_telegram_message("🚀 Monitor de Power BI iniciado! Vigiando os Workspaces.")
     
     while True:
         check_workspaces()

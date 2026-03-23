@@ -1,4 +1,6 @@
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 import os
 import json
 import time
@@ -20,6 +22,21 @@ STATE_FILE = "monitor_state.json"
 # Intervalo de verificação em segundos (10 minutos)
 CHECK_INTERVAL = 600
 
+def get_session_with_retries():
+    """Cria uma sessão HTTP com política de retentativas para evitar falhas por quedas rápidas de internet."""
+    session = requests.Session()
+    # Tenta 5 vezes. Se falhar na primeira, espera 1s, 2s, 4s, 8s, 16s...
+    retries = Retry(
+        total=5, 
+        backoff_factor=1, 
+        status_forcelist=[429, 500, 502, 503, 504],
+        allowed_methods=["HEAD", "GET", "OPTIONS", "POST"]
+    )
+    adapter = HTTPAdapter(max_retries=retries)
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
+    return session
+
 def get_access_token():
     """Obtém o token de acesso via Service Principal (Client Credentials Flow)."""
     if not all([TENANT_ID, CLIENT_ID, CLIENT_SECRET]):
@@ -35,7 +52,8 @@ def get_access_token():
     }
     
     try:
-        response = requests.post(url, data=body)
+        session = get_session_with_retries()
+        response = session.post(url, data=body, timeout=15)
         response.raise_for_status()
         return response.json().get('access_token')
     except Exception as e:
@@ -57,7 +75,8 @@ def send_telegram_message(message):
     }
     
     try:
-        requests.post(url, json=payload)
+        session = get_session_with_retries()
+        session.post(url, json=payload, timeout=15)
     except Exception as e:
         print(f"⚠️ Erro ao enviar Telegram: {e}")
 
@@ -91,12 +110,13 @@ def check_workspaces():
     state = load_state()
     features_found = 0
     failures_found = 0
+    session = get_session_with_retries()
 
     try:
         # 1. Listar Workspaces (Groups)
         print("🔍 Listando Workspaces...")
         groups_url = "https://api.powerbi.com/v1.0/myorg/groups"
-        resp = requests.get(groups_url, headers=headers)
+        resp = session.get(groups_url, headers=headers, timeout=20)
         
         if resp.status_code != 200:
             print(f"❌ Erro ao listar Workspaces: {resp.status_code} - {resp.text}")
@@ -111,7 +131,7 @@ def check_workspaces():
             
             # 2. Listar Datasets do Workspace
             ds_url = f"https://api.powerbi.com/v1.0/myorg/groups/{group_id}/datasets"
-            ds_resp = requests.get(ds_url, headers=headers)
+            ds_resp = session.get(ds_url, headers=headers, timeout=20)
             
             if ds_resp.status_code != 200:
                 print(f"⚠️ Erro ao ler datasets do workspace '{group_name}'")
@@ -126,7 +146,7 @@ def check_workspaces():
                 
                 # 3. Pegar histórico de Refresh (Apenas o último)
                 ref_url = f"https://api.powerbi.com/v1.0/myorg/groups/{group_id}/datasets/{ds_id}/refreshes?$top=1"
-                ref_resp = requests.get(ref_url, headers=headers)
+                ref_resp = session.get(ref_url, headers=headers, timeout=20)
                 
                 if ref_resp.status_code == 200:
                     history = ref_resp.json().get('value', [])
@@ -189,7 +209,11 @@ def check_workspaces():
 
     except Exception as e:
         print(f"❌ Erro crítico no loop: {e}")
-        send_telegram_message(f"⚠️ Erro no script de monitoramento: {e}")
+        # Evita mandar dezenas de mensagens no Telegram se a internet estiver totalmente fora
+        if "Max retries exceeded" not in str(e) and "Failed to establish a new connection" not in str(e):
+            send_telegram_message(f"⚠️ Erro no script de monitoramento: {e}")
+        else:
+            print("⚠️ A internet parece estar indisponível no momento. O script tentará novamente no próximo ciclo.")
 
 if __name__ == "__main__":
     print("🚀 Monitor de Power BI via API iniciado!")

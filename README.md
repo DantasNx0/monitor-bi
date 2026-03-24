@@ -1,21 +1,15 @@
 # 📊 Monitor de Erros Power BI / Fabric
 
-Este projeto oferece **duas formas** de monitorar falhas de atualização em Datasets do Power BI e Microsoft Fabric, notificando via Telegram.
+Este projeto oferece uma forma automatizada e invisível de monitorar falhas de atualização em Datasets do Power BI e Microsoft Fabric, notificando sua equipe diretamente via Telegram.
 
 ## 🚀 Funcionalidades
 
-### 1. Novo Monitor via API (`monitor_fabric.py`)
-> **Recomendado**
 - **Monitoramento Proativo:** Varre automaticamente todos os Workspaces acessíveis via API REST.
-- **Detecção Precisa:** Identifica falhas diretamente no histórico de atualização do dataset.
-- **Inteligente:** Evita spam (notifica apenas uma vez por falha nova).
-- **Resiliente:** Conta com sistema automático de retentativas (Retry/Backoff) para tolerar micro-quedas de internet sem falsos positivos.
-- **Intervalo:** Verifica a cada **10 minutos** (configurável).
-
-### 2. Monitor via Email (`monitor_email.py`)
-> **Legado / Alternativo**
-- **Reativo:** Monitora uma caixa de entrada IMAP (Gmail/Outlook) procurando por emails de erro enviados pelo Power BI.
-- Ideal caso você não tenha permissões de admin/service principal, mas receba os emails de erro.
+- **Detecção Precisa:** Identifica falhas diretamente no histórico de atualização dos datasets.
+- **Inteligente:** Evita spam, notificando apenas uma vez para cada falha nova.
+- **Resiliente:** Conta com sistema automático de retentativas (Retry/Backoff) para tolerar micro-quedas de internet sem gerar alarmes falsos.
+- **Background / Invisível:** Script pronto para execução totalmente oculta 24/7, sem travamento de janelas na tela.
+- **Intervalo:** Verifica automaticamente os datasets a cada **10 minutos** por padrão.
 
 ---
 
@@ -42,10 +36,7 @@ Este projeto oferece **duas formas** de monitorar falhas de atualização em Dat
 
 ## ⚙️ Configuração (.env)
 
-Crie um arquivo chamado `.env` na raiz do projeto e preencha conforme o método escolhido:
-
-### Para usar o Monitor API (`monitor_fabric.py`)
-Você precisa de um **Service Principal** (App Registration) no Azure com acesso aos Workspaces.
+Crie um arquivo chamado `.env` na raiz do projeto contendo as credenciais do **Service Principal** (App Registration) da sua conta Azure, junto os Dados do Telegram:
 
 ```ini
 # --- Credenciais do Power BI (Service Principal) ---
@@ -58,47 +49,29 @@ TELEGRAM_TOKEN=seu_token_do_bot
 TELEGRAM_CHAT_ID=seu_chat_id
 ```
 
-### Para usar o Monitor Email (`monitor_email.py`)
-```ini
-# --- Credenciais do Email (Gmail/Outlook) ---
-EMAIL_USER=seu_email@gmail.com
-EMAIL_PASS=sua_senha_de_app
-IMAP_SERVER=imap.gmail.com
-EMAIL_SUBJECT_FILTER=Refresh failed
-
-# (Mantenha também as credenciais do Telegram acima)
-```
-
 ---
 
 ## ▶️ Como Rodar
 
-### Opção 1: Monitor via API (Acompanhando pelo Terminal)
-Para ver os logs rodando ao vivo na tela de comando negra:
+### Opção 1: Modo Oculto 24/7 (Recomendado)
+Para que o bot rode invisível em segundo plano sem abrir nenhuma "tela preta" que pode ser fechada por acidente:
+- Dê um **clique duplo** no arquivo `RODAR_OCULTO.vbs`. 
+- *(Dica de Ouro: Copie um atalho desse arquivo e cole na pasta `shell:startup` do Windows para o robô iniciar automaticamente quando o PC ligar).*
+
+### Opção 2: Modo Terminal (Com visualização)
+Caso precise investigar algum erro interno, ou para rodar na primeira vez:
 ```bash
 python monitor_fabric.py
 ```
-*(Ou dê um clique duplo em `INICIAR_MONITOR.bat`)*
-
-### Opção 2: Monitor via API (Modo Oculto 24/7)
-Para que o bot rode invisível em segundo plano sem abrir nenhuma "tela preta" que pode ser fechada por acidente:
-- Dê um **clique duplo** no arquivo `RODAR_OCULTO.vbs`. 
-- *(Dica: Coloque um atalho desse arquivo na pasta `shell:startup` do Windows para o robô iniciar automaticamente quando o PC ligar).*
-
-### Opção 3: Monitor via Email (Legado)
-No terminal:
-```bash
-python monitor_email.py
-```
+*(Ou apenas dê um clique duplo simples em `INICIAR_MONITOR.bat`)*
 
 ---
 
-## 📦 Estrutura dos Arquivos
+## 📦 Estrutura dos Arquivos Principais
 
-- `monitor_fabric.py`: **[PRINCIPAL]** Script de monitoramento via API com resiliência de conexão.
-- `RODAR_OCULTO.vbs`: Script que inicia o `monitor_fabric.py` totalmente background (invisível).
-- `INICIAR_MONITOR.bat`: Atalho para abrir a execução com a visualização clássica no terminal.
-- `monitor_email.py`: Script legado de monitoramento via Email IMAP.
-- `monitor_state.json`: Arquivo automático (gerado pelo sistema) para controlar o envio de Alertas no Telegram.
-- `.env`: Arquivo de configuração de chaves secretas (NÃO COMPARTILHE NO GITHUB).
-- `requirements.txt`: Dependências essenciais do pacote Python.
+- `monitor_fabric.py`: **[PRINCIPAL]** Script de monitoramento em Python contendo inteligência de resiliência.
+- `RODAR_OCULTO.vbs`: Script que inicia o `monitor_fabric.py` totalmente em background (invisível de imediato).
+- `INICIAR_MONITOR.bat`: Atalho para abrir a execução com a visualização clássica no prompt de comando.
+- `monitor_state.json`: Arquivo que armazena cache (gerado automaticamente) para monitorar quais falhas já formam apitadas e evitas envios duplicados.
+- `.env`: Configurações de chaves secretas e tokens (NUNCA envie para o GitHub).
+- `requirements.txt`: Dependências essenciais da biblioteca Python.

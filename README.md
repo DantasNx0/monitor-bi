@@ -9,10 +9,11 @@ Este projeto oferece **duas formas** de monitorar falhas de atualização em Dat
 - **Monitoramento Proativo:** Varre automaticamente todos os Workspaces acessíveis via API REST.
 - **Detecção Precisa:** Identifica falhas diretamente no histórico de atualização do dataset.
 - **Inteligente:** Evita spam (notifica apenas uma vez por falha nova).
+- **Resiliente:** Conta com sistema automático de retentativas (Retry/Backoff) para tolerar micro-quedas de internet sem falsos positivos.
 - **Intervalo:** Verifica a cada **10 minutos** (configurável).
 
 ### 2. Monitor via Email (`monitor_email.py`)
-> **Lagado / Alternativo**
+> **Legado / Alternativo**
 - **Reativo:** Monitora uma caixa de entrada IMAP (Gmail/Outlook) procurando por emails de erro enviados pelo Power BI.
 - Ideal caso você não tenha permissões de admin/service principal, mas receba os emails de erro.
 
@@ -51,8 +52,6 @@ Você precisa de um **Service Principal** (App Registration) no Azure com acesso
 TENANT_ID=seu-tenant-id
 CLIENT_ID=seu-client-id-do-app
 CLIENT_SECRET=seu-client-secret-do-app
-# ID de um Workspace de exemplo (opcional, usado apenas para testes)
-WORKSPACE_ID=id-do-workspace
 
 # --- Credenciais do Telegram ---
 TELEGRAM_TOKEN=seu_token_do_bot
@@ -74,26 +73,32 @@ EMAIL_SUBJECT_FILTER=Refresh failed
 
 ## ▶️ Como Rodar
 
-### Opção 1: Monitor via API (Recomendado)
-No terminal:
+### Opção 1: Monitor via API (Acompanhando pelo Terminal)
+Para ver os logs rodando ao vivo na tela de comando negra:
 ```bash
 python monitor_fabric.py
 ```
-*Ele ficará rodando e verificará os workspaces a cada 10 minutos.*
+*(Ou dê um clique duplo em `INICIAR_MONITOR.bat`)*
 
-### Opção 2: Monitor via Email
+### Opção 2: Monitor via API (Modo Oculto 24/7)
+Para que o bot rode invisível em segundo plano sem abrir nenhuma "tela preta" que pode ser fechada por acidente:
+- Dê um **clique duplo** no arquivo `RODAR_OCULTO.vbs`. 
+- *(Dica: Coloque um atalho desse arquivo na pasta `shell:startup` do Windows para o robô iniciar automaticamente quando o PC ligar).*
+
+### Opção 3: Monitor via Email (Legado)
 No terminal:
 ```bash
 python monitor_email.py
 ```
-*Ele ficará rodando e verificará a caixa de entrada a cada 60 segundos.*
 
 ---
 
 ## 📦 Estrutura dos Arquivos
 
-- `monitor_fabric.py`: **[NOVO]** Script principal de monitoramento via API.
-- `monitor_email.py`: Script legado de monitoramento via Email.
-- `monitor_state.json`: Arquivo automático para gerenciar estado e evitar notificações duplicadas.
-- `.env`: Arquivo de configuração de senhas (NÃO COMPARTILHE).
-- `requirements.txt`: Dependências do Python (`requests`, `python-dotenv`).
+- `monitor_fabric.py`: **[PRINCIPAL]** Script de monitoramento via API com resiliência de conexão.
+- `RODAR_OCULTO.vbs`: Script que inicia o `monitor_fabric.py` totalmente background (invisível).
+- `INICIAR_MONITOR.bat`: Atalho para abrir a execução com a visualização clássica no terminal.
+- `monitor_email.py`: Script legado de monitoramento via Email IMAP.
+- `monitor_state.json`: Arquivo automático (gerado pelo sistema) para controlar o envio de Alertas no Telegram.
+- `.env`: Arquivo de configuração de chaves secretas (NÃO COMPARTILHE NO GITHUB).
+- `requirements.txt`: Dependências essenciais do pacote Python.
